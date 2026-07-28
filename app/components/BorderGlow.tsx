@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode
+} from "react";
 import "./BorderGlow.css";
 
 type BorderGlowProps = {
@@ -131,6 +138,8 @@ export function BorderGlow({
   glowRadius = 36
 }: BorderGlowProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const pointerFrameRef = useRef<number | null>(null);
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
 
   const getCenter = useCallback((element: HTMLElement) => {
     const { height, width } = element.getBoundingClientRect();
@@ -165,20 +174,53 @@ export function BorderGlow({
 
   const handlePointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
-      const card = cardRef.current;
-      if (!card) {
+      pointerRef.current = { x: event.clientX, y: event.clientY };
+
+      if (pointerFrameRef.current !== null) {
         return;
       }
 
-      const rect = card.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      pointerFrameRef.current = requestAnimationFrame(() => {
+        pointerFrameRef.current = null;
+        const card = cardRef.current;
+        const pointer = pointerRef.current;
+        if (!card || !pointer) {
+          return;
+        }
 
-      card.style.setProperty("--edge-proximity", `${(getEdgeProximity(card, x, y) * 100).toFixed(3)}`);
-      card.style.setProperty("--cursor-angle", `${getCursorAngle(card, x, y).toFixed(3)}deg`);
+        const rect = card.getBoundingClientRect();
+        const x = pointer.x - rect.left;
+        const y = pointer.y - rect.top;
+
+        card.style.setProperty("--edge-proximity", `${(getEdgeProximity(card, x, y) * 100).toFixed(3)}`);
+        card.style.setProperty("--cursor-angle", `${getCursorAngle(card, x, y).toFixed(3)}deg`);
+      });
     },
     [getCursorAngle, getEdgeProximity]
   );
+
+  const handlePointerLeave = useCallback(() => {
+    if (pointerFrameRef.current !== null) {
+      cancelAnimationFrame(pointerFrameRef.current);
+      pointerFrameRef.current = null;
+    }
+    pointerRef.current = null;
+
+    const card = cardRef.current;
+    if (!card) {
+      return;
+    }
+
+    card.style.setProperty("--edge-proximity", "0");
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pointerFrameRef.current !== null) {
+        cancelAnimationFrame(pointerFrameRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!animated || !cardRef.current) {
@@ -219,6 +261,7 @@ export function BorderGlow({
         delay: 2500,
         duration: 1500,
         ease: easeInCubic,
+        end: 0,
         onEnd: () => card.classList.remove("sweep-active"),
         onUpdate: (value) => card.style.setProperty("--edge-proximity", `${value}`),
         start: 100
@@ -243,7 +286,13 @@ export function BorderGlow({
   } as CSSProperties;
 
   return (
-    <div className={`border-glow-card ${className}`} onPointerMove={handlePointerMove} ref={cardRef} style={style}>
+    <div
+      className={`border-glow-card ${className}`}
+      onPointerLeave={handlePointerLeave}
+      onPointerMove={handlePointerMove}
+      ref={cardRef}
+      style={style}
+    >
       <span className="edge-light" />
       <div className="border-glow-inner">{children}</div>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 type Axis = "vertical" | "horizontal";
 
@@ -26,7 +27,14 @@ const TRACK_INSET = 4;
 const TARGET_SELECTOR = ".custom-scrollbar, .leaderboard-table-wrap";
 
 export function ScrollActivity() {
+  const pathname = usePathname();
+
   useEffect(() => {
+    const tracksCustomScrollers = pathname === "/leaderboard";
+    if (!tracksCustomScrollers) {
+      return;
+    }
+
     const records = new Map<HTMLElement | null, ScrollbarRecord>();
     let frame = 0;
 
@@ -150,12 +158,31 @@ export function ScrollActivity() {
       if (!scrollKeys.includes(event.code) && !scrollKeys.includes(event.key)) {
         return;
       }
-      const focused = document.activeElement?.closest<HTMLElement>(TARGET_SELECTOR);
+      const activeElement = document.activeElement;
+      const focused = activeElement?.closest<HTMLElement>(TARGET_SELECTOR);
       if (focused && isScrollable(focused)) {
         show(recordFor(focused));
         return;
       }
+      if (isTextEditingElement(activeElement)) {
+        return;
+      }
       show(recordFor(null));
+    }
+
+    function onInput(event: Event) {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const scroller = target.matches(TARGET_SELECTOR) ? target : target.closest<HTMLElement>(TARGET_SELECTOR);
+      if (scroller && isScrollable(scroller)) {
+        show(recordFor(scroller));
+        return;
+      }
+
+      scheduleUpdate();
     }
 
     function scrollTargetFromPoint(x: number, y: number) {
@@ -301,8 +328,6 @@ export function ScrollActivity() {
       refreshTargets();
     }
 
-    const observer = new MutationObserver(refreshTargets);
-    observer.observe(document.body, { childList: true, subtree: true });
     refreshTargets();
 
     window.addEventListener("scroll", onScroll, true);
@@ -310,15 +335,16 @@ export function ScrollActivity() {
     window.addEventListener("pointermove", onPointerMove, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("input", onInput, true);
     window.addEventListener("resize", onResize);
 
     return () => {
-      observer.disconnect();
       window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("input", onInput, true);
       window.removeEventListener("resize", onResize);
       if (frame) {
         window.cancelAnimationFrame(frame);
@@ -331,13 +357,22 @@ export function ScrollActivity() {
         record.horizontal.remove();
       });
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }
 
 function isScrollable(element: HTMLElement) {
   return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
+}
+
+function isTextEditingElement(element: Element | null) {
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLSelectElement ||
+    (element instanceof HTMLElement && element.isContentEditable)
+  );
 }
 
 function clamp(value: number, min: number, max: number) {

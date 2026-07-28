@@ -1,58 +1,44 @@
-# imagent-ui
+# Imagent Dashboard
 
-Product website for Imagent: home page, OpenRouter-backed generation
-playground, benchmark leaderboard, whitepaper, and imported `imagent-bench`
-reports.
+Product website for Imagent: home page, benchmark leaderboard, whitepaper, and
+imported `imagent-bench` reports.
 
-The playground uses OpenRouter with the project-standard image model
-`google/gemini-3.1-flash-image` (Gemini 3.1 Flash Image). The UI intentionally
-shows only that model so contributors compare agent orchestration against a
-fixed underlying image model.
+Generation is fixed to the project-standard image model
+`google/gemini-3.1-flash-image` (Gemini 3.1 Flash Image), so published results
+compare agent orchestration against one shared underlying image model.
 
 ## Gittensor Relationship
 
 Imagent is being built through Gittensor. This website should make that visible
 without requiring visitors to know Discord context or subnet shorthand: the
-generation playground, benchmark leaderboard, and imported reports all represent
-the open image-agent competition that Gittensor helps power.
+leaderboard and imported reports represent the open image-agent competition that
+Gittensor helps power.
 
-The public site at `https://tryimagent.com` should clearly explain that
-contributors submit agent improvements through GitHub PRs, benchmark rounds
-score those submissions, and winning agents become public reference code in the
-Imagent repository.
+The public site at `https://tryimagent.com` should clearly explain the benchmark
+archive and, once the rebuild lands, the standing of the reigning agent.
 
 ## Development
 
 ```bash
 npm install
 npm run dev
+npm run lint
+npm run build
 ```
 
-The generation playground also expects:
+Optional environment:
 
-- `python3` on your PATH, or `IMAGENT_PYTHON_BIN` pointing to a Python binary;
-- a sibling `../imagent` checkout, or `IMAGENT_REPOSITORY_PATH` set to an
-  `imagent` repository path;
 - `IMAGENT_PUBLIC_SITE_URL=https://tryimagent.com` if the deployed public origin
-  differs from the default and you want metadata plus OpenRouter attribution to
-  match it;
-- an OpenRouter API key entered in the browser settings modal, or both
-  `OPENROUTER_API_KEY` and `IMAGENT_UI_ENABLE_SERVER_KEY_FALLBACK=true`
-  configured on the UI server for trusted private shared use.
-
-Generated playground images are stored under `data/agent-runs` and served back
-through the UI as run artifacts. The browser no longer persists base64 image
-payloads or API keys in `localStorage`, and the public runtime status endpoint
-does not expose local filesystem paths.
+  differs from the default and you want page metadata to match it.
 
 Import a benchmark report:
 
 ```bash
-npm run import-report -- ../imagent-bench/benchmark-output/benchmark-report.json
+npm run import-report -- /path/to/benchmark-output/benchmark-report.json
 ```
 
-The UI reads benchmark reports from `data/reports`. Official benchmark runs are
-still produced by `imagent-bench`.
+The UI reads benchmark reports from `data/reports`. `/leaderboard` is rendered
+dynamically so an imported report appears without a rebuild.
 
 ## Deployment
 
@@ -62,7 +48,6 @@ For the public deployment on `https://tryimagent.com`, the repository includes
 reload Caddy from the server host:
 
 ```bash
-cd ~/Documents/imagent-ai/imagent-ui
 sudo caddy validate --config "$PWD/deploy/Caddyfile"
 sudo caddy reload --config "$PWD/deploy/Caddyfile"
 ```
@@ -71,7 +56,6 @@ To avoid path mistakes and keep the service config in sync, prefer the bundled
 deploy helper on the server host:
 
 ```bash
-cd ~/Documents/imagent-ai/imagent-ui
 npm run deploy:caddy
 ```
 

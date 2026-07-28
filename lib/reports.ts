@@ -11,14 +11,12 @@ export type Artifact = {
 
 export type CaseResult = {
   id: string;
-  numeric_id: number;
   prompt: string;
   capability: string;
   status: "pass" | "fail" | "error";
   score: number;
   latency_ms: number;
   cost_usd: number;
-  checks: Array<Record<string, unknown>>;
   artifacts: Artifact[];
   dimensions?: Record<string, unknown> | null;
   judge?: Record<string, unknown> | null;
@@ -337,23 +335,20 @@ function normalizeCaseResult(value: unknown): CaseResult | null {
   const score = finiteNumber(value.score);
   const latencyMs = finiteNumber(value.latency_ms);
   const costUsd = finiteNumber(value.cost_usd);
-  const checks = Array.isArray(value.checks) ? value.checks.filter(isRecord) : null;
   const artifacts = normalizeArtifacts(value.artifacts);
 
-  if (!id || !prompt || !capability || !status || score === null || latencyMs === null || costUsd === null || !checks || !artifacts) {
+  if (!id || !prompt || !capability || !status || score === null || latencyMs === null || costUsd === null || !artifacts) {
     return null;
   }
 
   return {
     id,
-    numeric_id: integerNumber(value.numeric_id) ?? 0,
     prompt,
     capability,
     status,
     score,
     latency_ms: latencyMs,
     cost_usd: costUsd,
-    checks,
     artifacts,
     dimensions: isRecord(value.dimensions) ? value.dimensions : null,
     judge: isRecord(value.judge) ? value.judge : null,

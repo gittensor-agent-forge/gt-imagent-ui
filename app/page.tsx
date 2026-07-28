@@ -17,26 +17,29 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { AgentStepper } from "@/app/components/AgentStepper";
-import { EffectCard, LandingBackgroundFx } from "@/app/components/EffectCard";
+import { LandingBackgroundFx } from "@/app/components/LandingBackgroundFx";
 import { ScrollReveal } from "@/app/components/ScrollReveal";
+import { StaticEffectCard } from "@/app/components/StaticEffectCard";
 import { IMAGENT_GENERATION_MODEL_NAME } from "@/lib/models";
 import type { LeaderboardEntry } from "@/lib/reports";
 import { listLeaderboardEntries } from "@/lib/reports";
 
 export const metadata: Metadata = {
   title: "Imagent | Image Generation Agents",
-  description: "A Gittensor-powered open competition for image-generation agents built around one fixed image model.",
+  description: "A Gittensor-powered research platform for image-generation agents and transparent benchmark history.",
   alternates: {
     canonical: "/"
   },
   openGraph: {
     title: "Imagent | Image Generation Agents",
-    description: "A Gittensor-powered open competition for image-generation agents built around one fixed image model.",
+    description: "A Gittensor-powered research platform for image-generation agents and transparent benchmark history.",
     url: "/"
   }
 };
 
-export const dynamic = "force-dynamic";
+// Benchmark imports are infrequent, so ISR keeps the landing route responsive
+// while reflecting new reports shortly after they are written.
+export const revalidate = 60;
 
 type ContrastCardContent = {
   copy: string;
@@ -85,27 +88,27 @@ const contributorSteps: Array<{
   tone: "submit" | "bench" | "promote";
 }> = [
   {
-    copy: "One focused agent PR enters the round",
-    detail: "Contributor PRs stay eligible when they only update the agent",
+    copy: "One focused Leaderboard UI PR enters manual review",
+    detail: "Only approved Leaderboard UI files can change",
     icon: GitPullRequestArrow,
     label: "Pull Request",
-    title: "Submit Agent",
+    title: "Submit Design",
     tone: "submit"
   },
   {
-    copy: "Same model benchmark score",
-    detail: "The run must improve beyond the threshold over the last winner",
+    copy: "A screenshot or video proves the visual change",
+    detail: "Missing evidence keeps the PR open with needs-evidence",
     icon: Workflow,
-    label: "Round Gate",
-    title: "Benchmark Proof",
+    label: "Evidence Gate",
+    title: "Show The Result",
     tone: "bench"
   },
   {
-    copy: "Best eligible strategy becomes the new reference",
-    detail: "The bot updates last_winner and archives the code in winners",
+    copy: "Maintainer review decides whether the design lands",
+    detail: "Leaderboard UI work is never benchmarked or auto-merged",
     icon: Trophy,
-    label: "Promotion",
-    title: "Archive Winner",
+    label: "Manual Review",
+    title: "Merge Deliberately",
     tone: "promote"
   }
 ];
@@ -128,40 +131,40 @@ export default async function HomePage() {
           </div>
           <h1 id="home-title">One Model Better Agents</h1>
           <p className="imagent-landing__hero-lede">
-            Imagent keeps the image model fixed and lets agent code compete through public benchmark rounds
+            Imagent keeps the image model fixed and makes image-agent progress visible through public benchmark history
           </p>
           <div className="imagent-landing__actions">
-            <Link className="imagent-landing__button imagent-landing__button--primary" href="/generation">
-              Generate <ArrowRight size={17} />
-            </Link>
-            <Link className="imagent-landing__button imagent-landing__button--secondary" href="/leaderboard">
+            <Link className="imagent-landing__button imagent-landing__button--primary" href="/leaderboard">
               Leaderboard <BarChart3 size={17} />
             </Link>
+            <Link className="imagent-landing__button imagent-landing__button--secondary" href="/whitepaper">
+              Whitepaper <ArrowRight size={17} />
+            </Link>
           </div>
-          <div className="imagent-landing__hero-strip" aria-label="Competition constraints" data-reveal="fade-up" data-reveal-delay="2">
-            <EffectCard animated className="imagent-landing__hero-card" radius={17}>
+          <div className="imagent-landing__hero-strip" aria-label="Competition constraints">
+            <StaticEffectCard className="imagent-landing__hero-card" radius={17}>
               <ImageIcon size={17} />
               <span>Model</span>
               <strong>{IMAGENT_GENERATION_MODEL_NAME}</strong>
-            </EffectCard>
-            <EffectCard animated className="imagent-landing__hero-card" radius={17}>
+            </StaticEffectCard>
+            <StaticEffectCard className="imagent-landing__hero-card" radius={17}>
               <ShieldCheck size={17} />
-              <span>Rule</span>
-              <strong>Beat Last Winner</strong>
-            </EffectCard>
+              <span>Current Track</span>
+              <strong>Leaderboard UI</strong>
+            </StaticEffectCard>
           </div>
-          <div className="imagent-landing__hero-signal" aria-label="Live round signal" data-reveal="fade-up" data-reveal-delay="3">
+          <div className="imagent-landing__hero-signal" aria-label="Project signals">
             <span>
-              <strong>2x daily</strong>
-              <small>Round cadence</small>
+              <strong>Manual</strong>
+              <small>UI review</small>
             </span>
             <span>
               <strong>{entries.length}</strong>
-              <small>Reports scored</small>
+              <small>Reports archived</small>
             </span>
             <span>
-              <strong>{eligible}</strong>
-              <small>Eligible agents</small>
+              <strong>{merged}</strong>
+              <small>Merged PRs</small>
             </span>
           </div>
         </div>
@@ -208,30 +211,24 @@ export default async function HomePage() {
           <SectionIntro
             eyebrow="Contribute"
             icon={GitPullRequestArrow}
-            title="Simple Path To Promotion"
-            copy="One PR per round Benchmark gate Winner history"
+            title="Simple Path To Review"
+            copy="One PR Visual evidence Manual merge"
           />
-          <div className="imagent-landing__promotion-rule" aria-label="Promotion rule" data-reveal="fade-left" data-reveal-delay="1">
-            <span><Crown size={15} /> Promotion rule</span>
-            <strong>Highest Eligible Score Wins</strong>
-            <p>Threshold must beat the last winner</p>
+          <div className="imagent-landing__promotion-rule" aria-label="Promotion rule">
+            <span><Crown size={15} /> Review rule</span>
+            <strong>Scoped Leaderboard UI</strong>
+            <p>Visual evidence is required before manual review</p>
           </div>
         </div>
-        <div className="imagent-landing__promotion-flow" aria-label="Contribution promotion flow">
+        <div className="imagent-landing__promotion-flow" aria-label="Contribution promotion flow" data-reveal="fade-up" data-reveal-delay="1">
           {contributorSteps.map((step, index) => {
             const Icon = step.icon;
             return (
               <div
                 className={`imagent-landing__promotion-node imagent-landing__promotion-node--${step.tone}`}
-                data-reveal="fade-up"
-                data-reveal-delay={index + 1}
                 key={step.title}
               >
-                <EffectCard
-                  animated={step.tone === "bench"}
-                  className={`imagent-landing__promotion-card imagent-landing__promotion-card--${step.tone}`}
-                  radius={24}
-                >
+                <StaticEffectCard className={`imagent-landing__promotion-card imagent-landing__promotion-card--${step.tone}`} radius={24}>
                   <div className="imagent-landing__promotion-card-head">
                     <span>{String(index + 1).padStart(2, "0")}</span>
                     <Icon size={22} />
@@ -240,15 +237,15 @@ export default async function HomePage() {
                   <h3>{step.title}</h3>
                   <p>{step.copy}</p>
                   <small>{step.detail}</small>
-                </EffectCard>
+                </StaticEffectCard>
               </div>
             );
           })}
         </div>
-        <div className="imagent-landing__promotion-notes" aria-label="Promotion safeguards" data-reveal="fade-up" data-reveal-delay="4">
-          <span><ShieldCheck size={14} /> agent only PR</span>
-          <span><Workflow size={14} /> benchmark scored</span>
-          <span><Trophy size={14} /> public winner code</span>
+        <div className="imagent-landing__promotion-notes" aria-label="Promotion safeguards">
+          <span><ShieldCheck size={14} /> Leaderboard scope</span>
+          <span><Workflow size={14} /> visual evidence</span>
+          <span><Trophy size={14} /> manual merge</span>
         </div>
       </section>
 
@@ -258,14 +255,14 @@ export default async function HomePage() {
             <Sparkles size={13} />
             Start
           </span>
-          <h2 id="landing-cta-title">Enter The Agent Bench</h2>
-          <p>Generate with the fixed model inspect the score and improve the agent</p>
+          <h2 id="landing-cta-title">Explore The Agent Bench</h2>
+          <p>Inspect the benchmark archive and follow the reigning agent</p>
           <div className="imagent-landing__actions">
-            <Link className="imagent-landing__button imagent-landing__button--primary" href="/generation">
-              Open Generation <Sparkles size={17} />
-            </Link>
-            <Link className="imagent-landing__button imagent-landing__button--secondary" href="/leaderboard">
+            <Link className="imagent-landing__button imagent-landing__button--primary" href="/leaderboard">
               View Leaderboard <BarChart3 size={17} />
+            </Link>
+            <Link className="imagent-landing__button imagent-landing__button--secondary" href="/whitepaper">
+              Read Whitepaper <Sparkles size={17} />
             </Link>
           </div>
         </div>
@@ -285,15 +282,19 @@ function RoundCockpit({
   leader: LeaderboardEntry | null;
   merged: number;
 }) {
+  const archiveLeaderLabel = leader
+    ? "Rank " + leader.rank + " archive leader"
+    : "No archive leader";
+
   return (
-    <EffectCard animated className="imagent-landing__cockpit" radius={22}>
+    <section className="imagent-landing__cockpit" aria-label="Benchmark archive leader">
       <div className="imagent-landing__cockpit-top">
-        <span><Trophy size={16} /> Winner</span>
-        <strong className="imagent-landing__king-mark" aria-label={leader ? `Rank ${leader.rank} winner` : "Open round winner"}>
+        <span><Trophy size={16} /> Archive Leader</span>
+        <strong className="imagent-landing__king-mark" aria-label={archiveLeaderLabel}>
           <Crown size={30} />
         </strong>
       </div>
-      <EffectCard className="imagent-landing__winner" glareOpacity={0.12} radius={16}>
+      <div className="imagent-landing__winner">
         <span className="imagent-landing__winner-avatar" aria-hidden="true">
           {leader?.contributor.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -305,25 +306,25 @@ function RoundCockpit({
         <div>
           <span>Agent</span>
           <strong>{leader?.agentName ?? "No reports"}</strong>
-          <p>{leader ? `@${leader.contributor.login}` : "Open round"}</p>
+          <p>{leader ? "@" + leader.contributor.login : "Awaiting report"}</p>
         </div>
-      </EffectCard>
+      </div>
       <div className="imagent-landing__cockpit-metrics">
-        <EffectCard className="imagent-landing__metric-tile" glareOpacity={0.12} radius={16}>
+        <div className="imagent-landing__metric-tile">
           <span>Score</span>
           <strong>{leader ? leader.score.toFixed(2) : "0.00"}</strong>
-        </EffectCard>
-        <EffectCard className="imagent-landing__metric-tile" glareOpacity={0.12} radius={16}>
+        </div>
+        <div className="imagent-landing__metric-tile">
           <span>Delta</span>
           <strong>{formatDelta(leader?.improvement.delta ?? null)}</strong>
-        </EffectCard>
+        </div>
       </div>
       <div className="imagent-landing__cockpit-footer">
         <span>{entries.length} reports</span>
-        <span>{eligible} eligible</span>
-        <span>{merged} merged</span>
+        <span>{eligible} historical eligible</span>
+        <span>{merged} merged PRs</span>
       </div>
-    </EffectCard>
+    </section>
   );
 }
 
@@ -355,7 +356,7 @@ function ContrastCard({ card }: { card: ContrastCardContent }) {
   const ItemIcon = card.tone === "active" ? CheckCircle2 : CircleMinus;
 
   return (
-    <EffectCard className={`imagent-landing__contrast-card imagent-landing__contrast-card--${card.tone}`} radius={18}>
+    <StaticEffectCard className={`imagent-landing__contrast-card imagent-landing__contrast-card--${card.tone}`} radius={18}>
       <div className="imagent-landing__contrast-card-head">
         <span>{card.eyebrow}</span>
         <Icon size={22} />
@@ -367,7 +368,7 @@ function ContrastCard({ card }: { card: ContrastCardContent }) {
           <li key={item}><ItemIcon size={16} /> {item}</li>
         ))}
       </ul>
-    </EffectCard>
+    </StaticEffectCard>
   );
 }
 

@@ -1,23 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { Route } from "next";
 
 const footerLinks: Array<{ href: Route; label: string }> = [
   { href: "/", label: "Home" },
-  { href: "/generation", label: "Generation" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/whitepaper", label: "Whitepaper" }
 ];
 
 export function AppFooter() {
-  const pathname = usePathname();
-
-  if (pathname === "/generation" || pathname.startsWith("/generation/")) {
-    return null;
-  }
-
   return (
     <footer className="imagent-footer">
       <div className="imagent-footer__inner">
@@ -44,7 +36,7 @@ export function AppFooter() {
             <a className="imagent-footer__social-link imagent-footer__social-link--discord" href="https://discord.com/invite/bittensor" rel="noreferrer" target="_blank" aria-label="Discord">
               <DiscordIcon />
             </a>
-            <a className="imagent-footer__social-link imagent-footer__social-link--github" href="https://github.com/imagent-ai/imagent-ui" rel="noreferrer" target="_blank" aria-label="GitHub">
+            <a className="imagent-footer__social-link imagent-footer__social-link--github" href="https://github.com/gittensor-agent-forge/gt-imagent" rel="noreferrer" target="_blank" aria-label="GitHub">
               <GitHubIcon />
             </a>
           </div>
